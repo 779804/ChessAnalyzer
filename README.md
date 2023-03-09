@@ -17,6 +17,7 @@ This project is compatible with all engines that utilize the [Universal Chess In
       - 8192 = 8 GB of RAM.
    - Depth: the depth of an engine is how many moves it will predict, therefore enhancing the analysis of the engine. The default for this is 12. Reminder: the larger the value, the slower the analysis might be.
 * You may now paste in the PGN for your game and it will be analysed utilizing your computer's hardware.
+* Once the analysis is concluded, you can scroll through the moves using the GUI on the right or the right and left arrow keys on your keyboard.
 
 # Credits
 I am responsible for coding the engine analysis and connection between the program and the User Interface.
