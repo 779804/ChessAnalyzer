@@ -11,10 +11,10 @@ This project is compatible with all engines that utilize the [Universal Chess In
 * Configure the settings for the engine. Not all engines will have the examples below. The primary details you want to focus on are:
    - Threads: set the number of threads to the maximum available, though you can leave 1 or 2 threads for other tasks.
    - Hash: set the hast to (nearly) the maximum amount of RAM (memory) available. The value is specified in MB (Mega-bytes) and should, in most cases, be written in powers of 2. Examples:
-      > 1024 = 1 GB of RAM.
-      > 2048 = 2 GB of RAM.
-      > 4096 = 4 GB of RAM.
-      > 8192 = 8 GB of RAM.
+      - 1024 = 1 GB of RAM.
+      - 2048 = 2 GB of RAM.
+      - 4096 = 4 GB of RAM.
+      - 8192 = 8 GB of RAM.
    - Depth: the depth of an engine is how many moves it will predict, therefore enhancing the analysis of the engine. The default for this is 12. Reminder: the larger the value, the slower the analysis might be.
 * You may now paste in the PGN for your game and it will be analysed utilizing your computer's hardware.
 
