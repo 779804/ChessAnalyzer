@@ -15,3 +15,5 @@ This project is compatible with all engines that utilize the UCI (Universal Ches
 # Credits
 I am responsible for coding the engine analysis and connection between the program and the User Interface.
 The chess board display has been mostly copied from AlejoG10's [python-chess-ai-yt](https://github.com/AlejoG10/python-chess-ai-yt) project.
+
+# Terms of use
