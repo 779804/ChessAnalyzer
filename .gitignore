@@ -1,3 +1,5 @@
 EngineLeela/
 Stockfish 11/
 Stockfish 15.1/
+__pycache__/
+ChessUI/src/__pycache__/

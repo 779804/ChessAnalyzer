@@ -72,7 +72,7 @@ pgn = open("GameSmall.pgn")
 game = chess.pgn.read_game(pgn)
 
 board = game.board()
-print(board)
+#print(board)
 max = 0
 for move in game.mainline_moves():
     max += 1
