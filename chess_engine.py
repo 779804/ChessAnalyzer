@@ -77,7 +77,7 @@ class ChessController():
                 evaluation = sign + evaluation
 
             move = analysis[currentPos]["best_move"]
-            if move != "O-O" and move != "O-O-O" and move != "1-0" and move != "0-1":
+            if move != "O-O" and move != "O-O-O" and move != "-":
                 moveFrom = move[:2]
                 moveTo = move[2:4]
                 try:
