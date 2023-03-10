@@ -19,12 +19,17 @@ class ChessController():
 
         Returns:
             chess.pgn.Game: Game class of the PGN.
+            totalMoves (int): Number of moves the game has.
         """
         if not os.path.isfile(file):
             raise FileNotFoundError("The PGN file to read from does not exist/has not been found.")
         pgn = open(file)
         game = chess.pgn.read_game(pgn)
-        return game
+
+        totalMoves = 0
+        for move in game.mainline_moves():
+            totalMoves += 1
+        return game, totalMoves
     
     def make_command_line_analysis_display(self, analysis: list, use_unicode_characters=True):
         """
@@ -39,8 +44,9 @@ class ChessController():
         def updateDisplay():
             currentPos = self.currentPos
             board = chess.Board()
+            board.set_board_fen(analysis[currentPos]["fen"]["board_fen"])
             os.system('cls')
-            drawing = str(analysis[currentPos]["drawing"])
+            drawing = str(board)
             if use_unicode_characters == True:
                 drawing = drawing.replace('P', '♙')
                 drawing = drawing.replace('R', '♜')
@@ -64,7 +70,6 @@ class ChessController():
             if len(move) == 4:
                 moveFrom = move[:2]
                 moveTo = move[2:4]
-                board.set_board_fen(analysis[currentPos]["fen"]["board_fen"])
                 piece = str.upper(str(board.piece_at(getattr(chess, str.upper(moveFrom)))))
                 isCapture = analysis[currentPos]["isCapture"]
                 bestMove = (piece if piece != 'P' else '') + ('x' if isCapture else '') + moveTo
@@ -160,7 +165,7 @@ class Engine():
         if not self.engine.options[config_name]:
             return False
         try:
-            self.engine.configure({config_name: config_name})
+            self.engine.configure({config_name: config_value})
             return True
         except:
             return False
@@ -181,20 +186,43 @@ class Engine():
 
         self.analysed_moves = 0
         if type(game) == str:
-            game = self.ChessController.read_pgn(game)
+            game, totalMoves = self.ChessController.read_pgn(game)
         analysis = []
         board = game.board()
 
-        totalMoves = 0
+        moveCount = 0
         for move in game.mainline_moves():
-            totalMoves += 1
+            moveCount +=1
+            success = False
+            moveTime = time
+            while success != True:
+                print("Analysing move "+str(moveCount)+", time to analyse: "+str(moveTime))
+                info = self.engine.analyse(board, chess.engine.Limit(time=moveTime, depth=depth))
+                print(info['score'].white())
+                if len(info['pv']) < 2:
+                    if str(info['score'].relative)[:1] == "#":
+                        board.push(move)
 
-        for move in game.mainline_moves():
-            info = self.engine.analyse(board, chess.engine.Limit(time=time, depth=depth))
-            bestMove = info['pv'][1]
-            board.push(move)
-            analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": str(info['score'].relative), "best_move": str(bestMove), "drawing": str(board), "isCapture": board.is_capture(bestMove)})
-            self.analysed_moves += 1
+                        if moveCount == totalMoves:
+                            score = int(str(info['score'].relative)[1:2])
+                            if score < 0:
+                                score = "0-1"
+                            else:
+                                score = "1-0"
+                        else:
+                            score = str(info['score'].relative)
+
+                        analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": score, "best_move": "-", "isCapture": board.is_capture(bestMove)})
+                        self.analysed_moves += 1
+                        return analysis
+                    else:
+                        moveTime += 1
+                        continue
+                bestMove = info['pv'][1]
+                board.push(move)
+                analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": str(info['score'].relative), "best_move": str(bestMove), "isCapture": board.is_capture(bestMove)})
+                self.analysed_moves += 1
+                success = True
 
         return analysis
 
