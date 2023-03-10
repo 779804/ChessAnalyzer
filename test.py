@@ -2,6 +2,7 @@ import os
 import threading
 import time
 from chess_engine import *
+from progress.bar import IncrementalBar   
 
 print("Welcome to the engine analyser.")
 print("Insert the file location for the engine you would like to use!")
@@ -19,13 +20,21 @@ if not os.path.isfile(file):
     os.system('exit')
 
 game, moves = engine.ChessController.read_pgn(file)
-analysis = engine.analyse_pgn(file)
 
-#thread = threading.Thread(target=engine.analyse_pgn, args=(game,))
-#thread.start()
+def moveReport():
+    bar = IncrementalBar('Game Analysis:', max=moves)
+    currMove = 0
+    bar.start()
+    while engine.analysed_moves < moves:
+        if engine.analysed_moves == currMove:
+            continue
+        currMove += 1
+        bar.index = currMove
+        bar.update()
+        time.sleep(.05)
+    bar.finish()
 
-#while engine.analysed_moves < moves:
-    #time.sleep(1)
-    #print(engine.analysed_moves)
+threading.Thread(target=moveReport).start()
+analysis = engine.analyse_pgn(file, depth=10)
 
 engine.ChessController.make_command_line_analysis_display(analysis, True)

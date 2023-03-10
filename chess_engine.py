@@ -61,20 +61,34 @@ class ChessController():
                 drawing = drawing.replace('q', '♕')
                 drawing = drawing.replace('k', '♚')
             evaluation = analysis[currentPos]["eval"]
-            str.replace(evaluation, '#', 'M')
+            evaluation = evaluation.replace('#', 'M')
+            print(evaluation)
             sign = evaluation[:1]
-            evaluation = str(int(evaluation[1:len(evaluation)]) / 100)
-            evaluation = sign + evaluation
+            if sign == "M":
+                "M+1"
+                sign = evaluation[1:2]
+                evaluation = evaluation.replace('+', '')
+                evaluation = evaluation.replace('-', '')
+                evaluation = sign + evaluation
+            elif evaluation == "1-0" or evaluation == "0-1":
+                evaluation = str(evaluation)
+            else:
+                evaluation = str(int(evaluation[1:len(evaluation)]) / 100)
+                evaluation = sign + evaluation
 
             move = analysis[currentPos]["best_move"]
-            if len(move) == 4:
+            if move != "O-O" and move != "O-O-O" and move != "1-0" and move != "0-1":
                 moveFrom = move[:2]
                 moveTo = move[2:4]
+                try:
+                    extra = move[4]
+                except:
+                    extra = ''
                 piece = str.upper(str(board.piece_at(getattr(chess, str.upper(moveFrom)))))
                 isCapture = analysis[currentPos]["isCapture"]
-                bestMove = (piece if piece != 'P' else '') + ('x' if isCapture else '') + moveTo
+                bestMove = (piece if piece != 'P' else '') + ('x' if isCapture else '') + moveTo + extra
                 if isCapture and piece == "P":
-                    bestMove = move[:1] + 'x' + moveTo
+                    bestMove = move[:1] + 'x' + moveTo + extra
             else:
                 bestMove = move
             print(drawing)
@@ -196,15 +210,13 @@ class Engine():
             success = False
             moveTime = time
             while success != True:
-                print("Analysing move "+str(moveCount)+", time to analyse: "+str(moveTime))
+                #print("Analysing move "+str(moveCount)+", time to analyse: "+str(moveTime))
                 info = self.engine.analyse(board, chess.engine.Limit(time=moveTime, depth=depth))
-                print(info['score'].white())
                 if len(info['pv']) < 2:
                     if str(info['score'].relative)[:1] == "#":
                         board.push(move)
-
                         if moveCount == totalMoves:
-                            score = int(str(info['score'].relative)[1:2])
+                            score = int(str(info['score'].relative)[1:3])
                             if score < 0:
                                 score = "0-1"
                             else:
@@ -219,8 +231,13 @@ class Engine():
                         moveTime += 1
                         continue
                 bestMove = info['pv'][1]
+                sampleBoard = chess.Board()
+                sampleBoard.set_board_fen(board.board_fen())
+                sampleBoard.push(bestMove)
                 board.push(move)
-                analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": str(info['score'].relative), "best_move": str(bestMove), "isCapture": board.is_capture(bestMove)})
+                
+                
+                analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": str(info['score'].white()), "best_move": str(bestMove) + ('+' if board.gives_check(bestMove) else '') + ('#' if board.is_checkmate() else ''), "isCapture": board.is_capture(bestMove)})
                 self.analysed_moves += 1
                 success = True
 
