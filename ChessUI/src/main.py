@@ -41,27 +41,36 @@ class Main:
                 
             pygame.display.update()
 
+
+prevMove = ""
 def test(main, analysis):
 
+    global prevMove
+
     for item in analysis.analysis:
-        time.sleep(2)
-        print(item)
-        print(item['played_move'][:2])
+        time.sleep(.5)
+
+        if item['played_move'] == prevMove:
+            return
+        else:
+            prevMove = item['played_move']
+        
         moveFrom = item['played_move'][:2]
         moveTo = item['played_move'][2:4]
 
-        row = int(rows.index(moveFrom[0]))
-        col = int(moveFrom[1])
+        row = 7 - (int(moveFrom[1]) - 1)
+        col = (rows.index(moveFrom[0]))
 
-        
-        row1 = int(rows.index(moveFrom[0]))
-        col1 = int(moveFrom[1])
-        row2 = int(rows.index(moveTo[0]))
-        col2 = int(moveTo[1])
+        row1 = 7 - (int(moveFrom[1]) - 1)
+        col1 = (rows.index(moveFrom[0]))
+        row2 = 7 - (int(moveTo[1]) - 1)
+        col2 = (rows.index(moveTo[0]))
 
         piece = main.game.board.squares[row][col].piece
 
-        main.game.board.move(piece, Move(Square(row1, col1), Square(row2, col2)))
+        symbol = item['played_move'][len(item['played_move']) - 1]
+
+        main.game.board.move(piece, Move(Square(row1, col1), Square(row2, col2)), (symbol == "+") or (symbol == "#"))
 
 
 if __name__ == "__main__":

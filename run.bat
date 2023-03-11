@@ -1,4 +1,1 @@
-@echo off
-cls
-color a
-echo hi
+python test.py

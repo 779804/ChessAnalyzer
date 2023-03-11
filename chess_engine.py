@@ -117,7 +117,6 @@ class ChessController():
                     extra = ''
                 piece = str.upper(str(board.piece_at(getattr(chess, str.upper(moveFrom)))))
                 isCapture = analysis[currentPos]["isCapture"]
-                print(isCapture)
                 bestMove = (piece if piece != 'P' else '') + ('x' if isCapture else '') + moveTo + extra
                 if isCapture and piece == "P":
                     bestMove = move[:1] + 'x' + moveTo + extra
@@ -264,6 +263,8 @@ class Engine():
                 bar.index = currMove
                 bar.update()
                 t.sleep(.005)
+            bar.index = totalMoves
+            bar.update()
             bar.finish()
 
         if progress_bar == True:
@@ -274,7 +275,6 @@ class Engine():
 
         moveCount = 0
         for move in game.mainline_moves():
-            print(move)
             moveCount += 1
             info = self.engine.analyse(board, chess.engine.Limit(time=time, depth=depth))
             bestMove = info['pv'][0]
@@ -291,6 +291,25 @@ class Engine():
             analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": str(info['score'].white()), "best_move": topEngineMove, "isCapture": board.is_capture(bestMove), "played_move": str(move)})
             self.analysed_moves += 1
             board.push(move)
+
+        info = self.engine.analyse(board, chess.engine.Limit(time=time, depth=depth))
+        bestMove = info['pv'][0]
+
+        if board.is_checkmate():
+            analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": "-", "best_move": "-", "isCapture": False, "played_move": None})
+        else:
+            sampleBoard = chess.Board()
+            sampleBoard.set_board_fen(board.board_fen())
+            sampleBoard.push(bestMove)
+
+            topEngineMove = str(bestMove)
+            if sampleBoard.is_checkmate():
+                topEngineMove += "#"
+            elif sampleBoard.is_check():
+                topEngineMove += "+"
+           
+            analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": str(info['score'].white()), "best_move": topEngineMove, "isCapture": board.is_capture(bestMove), "played_move": str(move)})
+        
 
         return Analysis(game, analysis)
 
