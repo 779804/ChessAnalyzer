@@ -1,4 +1,5 @@
 # ChessEngine
+**This project is currently unfinished. The instructions you see below are planned for the final product, and it does not function as of now.**
 A project I am currently working on that utilizes python to control engines such as Stockfish and Leela, and provide full game analysis with a GUI included.
 You are free to fork, modify, or utilize this project for yourself if you would like to.
 
@@ -21,7 +22,7 @@ This project is compatible with all engines that utilize the [Universal Chess In
 
 # Credits
 I am responsible for coding the engine analysis and connection between the program and the User Interface.
-The chess board display has been mostly copied from AlejoG10's [python-chess-ai-yt](https://github.com/AlejoG10/python-chess-ai-yt) project.
+Most of the chess board display's source code has been used from AlejoG10's [python-chess-ai-yt](https://github.com/AlejoG10/python-chess-ai-yt) project.
 
 # Terms of use
 This program is free to use and distributed under the [MIT License](https://github.com/779804/ChessAnalyzer/blob/main/LICENSE). Distribution, commercial use, modification and private use are all authorized. The copyright notice and permission notice must be included in all copies or substantial portions of the Software.
