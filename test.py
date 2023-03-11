@@ -5,13 +5,14 @@ from chess_engine import *
 from progress.bar import IncrementalBar   
 
 print("Welcome to the engine analyser.")
-print("Insert the file location for the engine you would like to use!")
-file = input("> ")
-if not os.path.isfile(file):
-    os.system('exit')
+#print("Insert the file location for the engine you would like to use!")
+#file = input("> ")
+#if not os.path.isfile(file):
+#    os.system('exit')
 
-engine = Engine(file)
-engine.set_engine_configuration("Hash", 4096)
+engine = Engine("Stockfish 15.1\\stockfish-windows-2022-x86-64-avx2")
+if engine.has_configuration("Hash"):
+    engine.set_engine_configuration("Hash", 4096)
 engine.set_engine_configuration("Threads", 4)
 
 print("Insert the location for the game's PGN file.")
@@ -34,7 +35,10 @@ def moveReport():
         time.sleep(.05)
     bar.finish()
 
-threading.Thread(target=moveReport).start()
-analysis = engine.analyse_pgn(file, depth=10)
+#threading.Thread(target=moveReport).start()
+analysis = engine.analyse_pgn(file, depth=15, progress_bar=True)
 
-engine.ChessController.make_command_line_analysis_display(analysis, True)
+print("Done! Display analysis?")
+show = input("> ")
+if show == '' or show == 'y':
+    engine.ChessController.make_command_line_analysis_display(analysis, True)

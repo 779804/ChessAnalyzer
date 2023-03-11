@@ -33,7 +33,7 @@ class Board:
                 self.squares[final.row][final.col].piece = piece
                 if not testing:
                     sound = Sound(
-                        os.path.join('assets/sounds/capture.wav'))
+                        os.path.join('../assets/sounds/capture.wav'))
                     sound.play()
             
             # pawn promotion

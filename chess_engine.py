@@ -2,7 +2,17 @@ import chess.pgn
 import chess.engine
 import chess
 import os
+import threading
+import time as t
+from progress.bar import IncrementalBar
 from pynput.keyboard import Key, Listener
+
+class Analysis():
+
+    def __init__(self, game: chess.pgn.Game, analysis: list):
+        self.game = game
+        self.analysis = analysis
+        self.total_moves = len(analysis)
 
 class ChessController():
 
@@ -31,17 +41,21 @@ class ChessController():
             totalMoves += 1
         return game, totalMoves
     
-    def make_command_line_analysis_display(self, analysis: list, use_unicode_characters=True):
+    def make_command_line_analysis_display(self, game_analysis: Analysis, use_unicode_characters=True):
         """
         Creates a command-line display of the game analysis.
         
         Args:
-            analysis (list): List containing the analysed game.
+            analysis (Analysis): Analysis class of the analysed game.
             use_unicode_characters (bool): Choose if you would like to use unicode characters for the pieces.
         """
         self.currentPos = 0
         
         def updateDisplay():
+
+            analysis = game_analysis.analysis
+            game = game_analysis.game
+
             currentPos = self.currentPos
             board = chess.Board()
             board.set_board_fen(analysis[currentPos]["fen"]["board_fen"])
@@ -62,7 +76,6 @@ class ChessController():
                 drawing = drawing.replace('k', '♚')
             evaluation = analysis[currentPos]["eval"]
             evaluation = evaluation.replace('#', 'M')
-            print(evaluation)
             sign = evaluation[:1]
             if sign == "M":
                 "M+1"
@@ -73,8 +86,26 @@ class ChessController():
             elif evaluation == "1-0" or evaluation == "0-1":
                 evaluation = str(evaluation)
             else:
-                evaluation = str(int(evaluation[1:len(evaluation)]) / 100)
-                evaluation = sign + evaluation
+                try:
+                    evaluation[1:len(evaluation)]
+                    evaluation = str(int(evaluation[1:len(evaluation)]) / 100)
+                    evaluation = sign + evaluation
+                except:
+                    try:
+                        if int(evaluation) == 0:
+                            evaluation = "+0.00"
+                    except:
+                        evaluation = "ERROR. Original evaluation value: " + str(evaluation)
+                
+            if currentPos == game_analysis.total_moves - 1:
+                try:
+                    evaluation = game.headers["Result"]
+                except:
+                    pass
+                try:
+                    evaluation += " | " + game.headers["Termination"]
+                except:
+                    pass
 
             move = analysis[currentPos]["best_move"]
             if move != "O-O" and move != "O-O-O" and move != "-":
@@ -86,17 +117,35 @@ class ChessController():
                     extra = ''
                 piece = str.upper(str(board.piece_at(getattr(chess, str.upper(moveFrom)))))
                 isCapture = analysis[currentPos]["isCapture"]
+                print(isCapture)
                 bestMove = (piece if piece != 'P' else '') + ('x' if isCapture else '') + moveTo + extra
                 if isCapture and piece == "P":
                     bestMove = move[:1] + 'x' + moveTo + extra
             else:
                 bestMove = move
+
+            white = "White"
+            black = "Black"
+            try:
+                white = game.headers['White']
+                black = game.headers['Black']
+            except:
+                pass
+
+            try:
+                white += " (" + game.headers["WhiteElo"] + ")"
+                black += " (" + game.headers['BlackElo'] + ")"
+            except:
+                pass
+            
+            print(white + " vs " + black)
             print(drawing)
             print("Evaluation: " + evaluation)
             print("Best move: "+bestMove)
+            print("Move "+str(currentPos + 1)+"/"+str(game_analysis.total_moves))
 
         def on_press(key):
-            max = len(analysis)
+            max = game_analysis.total_moves
             if key == Key.right:
                 if self.currentPos < max - 1:
                     self.currentPos += 1
@@ -159,9 +208,10 @@ class Engine():
         Returns:
             bool: Returns a boolean based on if it exists or not.
         """
-        if self.engine.options[config_name]:
+        try:
+            self.engine.options[config_name]
             return True
-        else:
+        except:
             return False
             
     def set_engine_configuration(self, config_name: str, config_value) -> bool:
@@ -184,7 +234,7 @@ class Engine():
         except:
             return False
 
-    def analyse_pgn(self, game: chess.pgn.Game | str, depth=12, time=5) -> list:
+    def analyse_pgn(self, game: chess.pgn.Game | str, depth=12, time=5, progress_bar=False) -> Analysis:
         """
         Analyses a PGN file and returns the analysis as a list.
         The "analysed_moves" variable shows how many moves have been analysed so far.
@@ -193,53 +243,54 @@ class Engine():
             game (Game | str): PGN file name or Game class.
             depth (int): Depth of the engine analysis.
             time (int): Time, in seconds, that the engine has to analyse each move.
+            progress_bar (bool): Displays a progress bar of the total analysed moves in the command line.
 
         Returns:
-            list: List containing the analysis of each position.
+            Analysis (class): Class containing the game and the game's analysis.
         """
 
         self.analysed_moves = 0
         if type(game) == str:
             game, totalMoves = self.ChessController.read_pgn(game)
+
+        def moveReport():
+            bar = IncrementalBar('Game Analysis:', max=totalMoves)
+            currMove = 0
+            bar.start()
+            while self.analysed_moves < totalMoves:
+                if self.analysed_moves == currMove:
+                    continue
+                currMove += 1
+                bar.index = currMove
+                bar.update()
+                t.sleep(.005)
+            bar.finish()
+
+        if progress_bar == True:
+            threading.Thread(target=moveReport).start()
+
         analysis = []
         board = game.board()
 
         moveCount = 0
         for move in game.mainline_moves():
-            moveCount +=1
-            success = False
-            moveTime = time
-            while success != True:
-                #print("Analysing move "+str(moveCount)+", time to analyse: "+str(moveTime))
-                info = self.engine.analyse(board, chess.engine.Limit(time=moveTime, depth=depth))
-                if len(info['pv']) < 2:
-                    if str(info['score'].relative)[:1] == "#":
-                        board.push(move)
-                        if moveCount == totalMoves:
-                            score = int(str(info['score'].relative)[1:3])
-                            if score < 0:
-                                score = "0-1"
-                            else:
-                                score = "1-0"
-                        else:
-                            score = str(info['score'].relative)
+            print(move)
+            moveCount += 1
+            info = self.engine.analyse(board, chess.engine.Limit(time=time, depth=depth))
+            bestMove = info['pv'][0]
+            sampleBoard = chess.Board()
+            sampleBoard.set_board_fen(board.board_fen())
+            sampleBoard.push(bestMove)
 
-                        analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": score, "best_move": "-", "isCapture": board.is_capture(bestMove)})
-                        self.analysed_moves += 1
-                        return analysis
-                    else:
-                        moveTime += 1
-                        continue
-                bestMove = info['pv'][1]
-                sampleBoard = chess.Board()
-                sampleBoard.set_board_fen(board.board_fen())
-                sampleBoard.push(bestMove)
-                board.push(move)
-                
-                
-                analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": str(info['score'].white()), "best_move": str(bestMove) + ('+' if board.gives_check(bestMove) else '') + ('#' if board.is_checkmate() else ''), "isCapture": board.is_capture(bestMove)})
-                self.analysed_moves += 1
-                success = True
+            topEngineMove = str(bestMove)
+            if sampleBoard.is_checkmate():
+                topEngineMove += "#"
+            elif sampleBoard.is_check():
+                topEngineMove += "+"
+            
+            analysis.append({"fen": {"fen": board.fen(), "board_fen": board.board_fen()}, "eval": str(info['score'].white()), "best_move": topEngineMove, "isCapture": board.is_capture(bestMove), "played_move": str(move)})
+            self.analysed_moves += 1
+            board.push(move)
 
-        return analysis
+        return Analysis(game, analysis)
 
